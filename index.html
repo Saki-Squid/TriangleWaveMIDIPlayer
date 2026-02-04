@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Triangle MIDI Studio - Pro EQ Edition</title>
+    <title>Triangle wave MIDI Player</title>
     <script src="https://cdn.jsdelivr.net/npm/midi-parser-js@4.0.4/src/main.min.js"></script>
     <style>
         :root { --accent: #00f2fe; --bg: #0a0a12; --panel: #16162d; --eq-color: #ffb86c; --bg-play-color: #50fa7b; }
@@ -30,7 +30,7 @@
         .eq-range { accent-color: var(--eq-color) !important; }
 
         .mixer-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 20px; }
-        .ch { background: #0a0a1a; padding: 8px 2px; border-radius: 4px; text-align: center; border: 1px solid #222; }
+        .ch { background: #0a0a1a; padding: 8px 2px; border-radius: 4px; text-align: center; border: 1px solid #222;}
         .v-slider { appearance: slider-vertical; height: 70px; width: 10px; margin: 5px 0; }
         .ind { width: 6px; height: 6px; background: #333; border-radius: 50%; margin: 0 auto 5px; }
         .ind.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
@@ -41,7 +41,7 @@
 <body>
 
 <div class="container">
-    <h1>TRIANGLE MIDI STUDIO</h1>
+    <h1>Triangle Wave MIDI Player</h1>
 
     <div class="panel">
         <input type="file" id="fileInput" accept=".mid,.midi" style="margin-bottom:15px; width:100%;">
@@ -161,11 +161,25 @@
     const mixerGrid = document.getElementById('mixerGrid');
     for(let i=0; i<16; i++) {
         const div = document.createElement('div'); div.className = 'ch';
-        div.innerHTML = `<div class="ind" id="ind-${i}"></div>
-            <input type="range" class="v-slider" id="vs-${i}" min="0" max="1" step="0.01" value="0.5">
-            <div style="font-size:0.5rem">CH${i+1}</div>`;
+div.innerHTML = `
+    <div class="ind" id="ind-${i}"></div>
+    <input type="range" class="v-slider" id="vs-${i}" min="0" max="1" step="0.01" value="0.5">
+    <input type="number" id="vn-${i}" class="num-in" value="0.5" step="0.05" min="0" max="1" 
+           style="width: 35px; font-size: 0.6rem; padding: 1px; margin-bottom: 5px;">
+    <div style="font-size:0.5rem">CH${i+1}</div>`;
         mixerGrid.appendChild(div);
-        div.querySelector(`#vs-${i}`).oninput = (e) => { chSettings[i].vol = parseFloat(e.target.value); };
+const slider = div.querySelector(`#vs-${i}`);
+const number = div.querySelector(`#vn-${i}`);
+
+const updateVol = (val) => {
+    val = Math.max(0, Math.min(1, parseFloat(val) || 0));
+    chSettings[i].vol = val;
+    slider.value = val;
+    number.value = val.toFixed(2);
+};
+
+slider.oninput = (e) => updateVol(e.target.value);
+number.oninput = (e) => updateVol(e.target.value);
     }
 
     const formatTime = (s) => `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
