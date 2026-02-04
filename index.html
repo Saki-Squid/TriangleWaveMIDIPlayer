@@ -6,7 +6,7 @@
     <title>Triangle wave MIDI Player</title>
     <script src="https://cdn.jsdelivr.net/npm/midi-parser-js@4.0.4/src/main.min.js"></script>
     <style>
-        :root { --accent: #00f2fe; --bg: #0a0a12; --panel: #16162d; --eq-color: #ffb86c; --bg-play-color: #50fa7b; }
+        :root { --accent: #00f2fe; --bg: #0a0a12; --panel: #16162d; --eq-color: #ffb86c; --bg-play-color: #00f2fe; }
         body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--accent); margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
         .panel { background: var(--panel); border: 1px solid #2a2a4d; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -15,7 +15,7 @@
         .group { background: #1f1f3a; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
         .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
         
-        .num-in { background: #000; color: var(--accent); border: 1px solid #444; border-radius: 4px; padding: 2px 5px; width: 65px; text-align: right; font-family: inherit; }
+        .num-in { background: #000; color: var(--accent); border: 1px solid #444; text-align: center; font-family: inherit; }
         .eq-in { color: var(--eq-color); border-color: #554433; }
 
         .btn-row { display: flex; gap: 5px; margin-top: 5px; }
@@ -29,13 +29,13 @@
         input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
         .eq-range { accent-color: var(--eq-color) !important; }
 
-        .mixer-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 20px; }
+        .mixer-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 20px; }
         .ch { background: #0a0a1a; padding: 8px 2px; border-radius: 4px; text-align: center; border: 1px solid #222;}
         .v-slider { appearance: slider-vertical; height: 70px; width: 10px; margin: 5px 0; }
         .ind { width: 6px; height: 6px; background: #333; border-radius: 50%; margin: 0 auto 5px; }
         .ind.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
-        .eq-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-top: 2px solid #333; padding-top: 15px; }
+        .eq-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;}
     </style>
 </head>
 <body>
@@ -47,64 +47,65 @@
         <input type="file" id="fileInput" accept=".mid,.midi" style="margin-bottom:15px; width:100%;">
         
         <div class="group">
-            <div class="label-row"><span>TIME (sec)</span><input type="number" id="timeInput" class="num-in" value="0"></div>
+            <div class="label-row"><span>TIME (sec)</span></div>
             <div class="label-row"><span id="timeDisplay">0:00 / 0:00</span></div>
             <input type="range" id="progressRange" min="0" max="100" value="0" step="0.1">
         </div>
 
         <button id="playBtn" class="play-btn" style="width:100%; margin-bottom:8px;" disabled>PLAY</button>
-        <div class="btn-row" style="margin-bottom:15px;">
+
+        <div class="btn-row" style="margin-bottom:10px;">
             <button id="pauseBtn">PAUSE</button>
             <button id="resetBtn">RESET</button>
         </div>
 
-        <div class="group" style="border-left: 4px solid var(--bg-play-color);">
-            <button id="bgPlayBtn">BG PLAY: OFF</button>
+        <div class="btn-row" style="margin-bottom:10px;">
+            <button id="loopBtn">LOOP: OFF</button>
+            <button id="modeBtn">STEREO</button>
         </div>
 
-        <div class="group">
-            <div class="label-row"><span>VOLUME</span><input type="number" id="volNum" class="num-in" value="0.7" step="0.05"></div>
-            <input type="range" id="volRange" min="0" max="1" step="0.01" value="0.7">
-        </div>
-
-        <div class="group">
-            <div class="label-row"><span>TEMPO (x)</span><input type="number" id="tempoNum" class="num-in" value="1.00" step="0.05"></div>
-            <input type="range" id="tempoRange" min="0.2" max="3.0" step="0.01" value="1.00">
-            
-            <div class="label-row" style="margin-top:10px;"><span>PITCH (Semi)</span><input type="number" id="pitchNum" class="num-in" value="0" step="1"></div>
-            <input type="range" id="pitchRange" min="-12" max="12" step="1" value="0">
-        </div>
+        <button id="bgPlayBtn"style="width:100%; margin-bottom:8px;">BG PLAY: OFF</button>
 
         <select id="waveSelect" class="group" style="width:100%">
             <option value="triangle">Triangle</option><option value="sine">Sine</option>
             <option value="square">Square</option><option value="sawtooth">Sawtooth</option>
-        </select>
-        <div class="btn-row">
-            <button id="loopBtn">LOOP: OFF</button>
-            <button id="modeBtn">STEREO</button>
+        </select>        
+        
+        <div class="group">
+            <div class="label-row"><span>VOLUME</span><input type="number" id="volNum" class="num-in" value="0.5" step="0.05"></div>
+            <input type="range" id="volRange" min="0" max="1" step="0.01" value="0.5">
         </div>
+        <div class="group">
+            <div class="label-row"><span>TEMPO (x)</span><input type="number" id="tempoNum" class="num-in" value="1.00" step="0.05"></div>
+            <input type="range" id="tempoRange" min="0.0" max="2.0" step="0.01" value="1.00">            
+        </div>
+        <div class="group">
+            <div class="label-row"><span>PITCH (Semi)</span><input type="number" id="pitchNum" class="num-in" value="0" step="1"></div>
+            <input type="range" id="pitchRange" min="-12" max="12" step="1" value="0">
+        </div>
+
+
     </div>
 
     <div class="panel">
         <h2 style="font-size: 0.9rem; margin-top:0; border-bottom:1px solid #333; padding-bottom:5px;">CHANNEL MIXER</h2>
         <div id="mixerGrid" class="mixer-grid"></div>
-
-        <h2 style="font-size: 0.9rem; color: var(--eq-color); border-bottom:1px solid #443322; padding-bottom:5px;">MASTER EQUALIZER</h2>
+        <h2 style="font-size: 0.9rem; margin-top:0; border-bottom:1px solid #333; padding-bottom:5px;">MASTER EQUALIZER</h2>
         <div class="eq-panel">
             <div class="group" style="margin-bottom:0">
                 <div class="label-row" style="color:var(--eq-color)"><span>BASS</span></div>
                 <input type="range" id="eqBassRange" class="eq-range" min="-20" max="20" value="0">
-                <input type="number" id="eqBassNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
+                <input type="number" id="eqBassNum" class="num-in eq-in" value="0" style="margin-top:5px;">
             </div>
             <div class="group" style="margin-bottom:0">
                 <div class="label-row" style="color:var(--eq-color)"><span>MID</span></div>
                 <input type="range" id="eqMidRange" class="eq-range" min="-20" max="20" value="0">
-                <input type="number" id="eqMidNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
+                <input type="number" id="eqMidNum" class="num-in eq-in" value="0" style="margin-top:5px;">
             </div>
             <div class="group" style="margin-bottom:0">
                 <div class="label-row" style="color:var(--eq-color)"><span>TREBLE</span></div>
                 <input type="range" id="eqTrebleRange" class="eq-range" min="-20" max="20" value="0">
-                <input type="number" id="eqTrebleNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
+                <input type="number" id="eqTrebleNum" class="num-in eq-in" value="0" style="margin-top:5px;">
             </div>
         </div>
         <div id="status" style="margin-top:15px; font-size:0.75rem; color:#666;">Waiting for MIDI...</div>
