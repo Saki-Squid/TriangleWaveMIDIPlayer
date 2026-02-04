@@ -3,247 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Triangle Wave MIDI Player</title>
+    <title>Triangle Wave MIDI Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/midi-parser-js@4.0.4/src/main.min.js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; padding: 20px; background: #05050a; color: #00f2fe; margin: 0; }
-        .panel { background: #111122; padding: 25px; border-radius: 30px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.3); display: inline-block; width: 95%; max-width: 500px; border: 1px solid #1f1f3a; margin-top: 20px; }
-        .control-group { margin: 10px 0; padding: 15px; background: #1a1a2e; border-radius: 20px; border: 1px solid #2a2a4d; }
-        input[type="range"] { width: 90%; cursor: pointer; accent-color: #00f2fe; margin-top: 10px; }
-        .btn-main { font-size: 1.1rem; padding: 12px 30px; cursor: pointer; border-radius: 50px; border: none; background: #00f2fe; color: #1a1a2e; font-weight: bold; transition: 0.3s; margin: 5px; }
-        .btn-main:hover { box-shadow: 0 0 25px rgba(0, 242, 254, 0.8); transform: translateY(-2px); }
-        .toggle-btn { background: #2d2d4d; color: #888; padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1px solid #333; font-size: 0.75rem; margin: 2px; }
-        .active-mode { background: #00f2fe !important; color: #1a1a2e !important; box-shadow: 0 0 15px #00f2fe; font-weight: bold; }
-        label { display: block; margin-bottom: 8px; font-size: 0.7rem; color: #8a8aff; text-transform: uppercase; letter-spacing: 2px; }
-        .input-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        input[type="number"] { background: transparent; border: 1px solid #00f2fe; color: #fff; font-size: 1.2rem; width: 80px; text-align: center; border-radius: 8px; font-family: 'Courier New', monospace; }
+        :root { --accent: #00f2fe; --bg: #0a0a12; --panel: #16162d; --eq-color: #ffb86c; --bg-play-color: #50fa7b; }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--accent); margin: 0; padding: 20px; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+        .panel { background: var(--panel); border: 1px solid #2a2a4d; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { grid-column: span 2; text-align: center; letter-spacing: 5px; margin: 10px 0 20px; font-weight: bold; text-shadow: 0 0 10px var(--accent); }
         
-        .adjust-btn { 
-            background: #1f3460; 
-            color: #00f2fe; 
-            border: 1px solid #00f2fe; 
-            border-radius: 8px; 
-            width: 38px; 
-            height: 38px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 0;
-            transition: 0.2s;
-        }
-        .adjust-btn:active { background: #00f2fe; color: #1a1a2e; }
-
-        .unit { color: #8a8aff; font-size: 0.8rem; width: 30px; text-align: left; }
-        #status { margin-top: 15px; font-size: 0.8rem; color: #5dade2; }
-        .wave-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .group { background: #1f1f3a; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
+        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
         
-        /* オーディオ設定用のレイアウト */
-        .audio-settings-grid { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-        .mono-stereo-wrap { display: flex; gap: 5px; }
-        .loop-btn-wide { width: 100%; max-width: 120px; margin-top: 5px !important; }
+        .num-in { background: #000; color: var(--accent); border: 1px solid #444; border-radius: 4px; padding: 2px 5px; width: 65px; text-align: right; font-family: inherit; }
+        .eq-in { color: var(--eq-color); border-color: #554433; }
 
-        input[type="file"] { color: #8a8aff; font-size: 0.8rem; margin-bottom: 20px; }
+        .btn-row { display: flex; gap: 5px; margin-top: 5px; }
+        button { flex: 1; background: #2d2d4d; color: white; border: 1px solid #444; padding: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s; border-radius: 4px; }
+        button:hover { background: #3d3d6d; border-color: var(--accent); }
+        button.active { background: #ff007f; border-color: #ff007f; }
+        
+        #bgPlayBtn.active { background: var(--bg-play-color); color: #000; border-color: var(--bg-play-color); }
+        .play-btn { background: var(--accent); color: #000; font-size: 1.1rem; }
+
+        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        .eq-range { accent-color: var(--eq-color) !important; }
+
+        .mixer-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 20px; }
+        .ch { background: #0a0a1a; padding: 8px 2px; border-radius: 4px; text-align: center; border: 1px solid #222; }
+        .v-slider { appearance: slider-vertical; height: 70px; width: 10px; margin: 5px 0; }
+        .ind { width: 6px; height: 6px; background: #333; border-radius: 50%; margin: 0 auto 5px; transition: 0.1s; }
+        .ind.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+        .eq-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-top: 2px solid #333; padding-top: 15px; }
+        canvas { width: 100%; height: 100px; background: #000; border-radius: 8px; border: 1px solid #333; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="panel">
-    <h1 style="margin:0 0 15px 0; letter-spacing: 2px; font-size: 1.5rem;">TRIANGLE WAVE <span style="font-size: 0.5em; vertical-align: middle;">MIDI PLAYER</span></h1>
-    
-    <input type="file" id="fileInput" accept=".mid,.midi"><br>
-    
-    <button id="playBtn" class="btn-main" disabled>PLAY / RESUME</button>
-    <button id="pauseBtn" class="btn-main" style="background:#333; color:#fff;">PAUSE</button>
+<div class="container">
+    <h1>TRIANGLE WAVE MIDI STUDIO</h1>
 
-    <div class="control-group">
-        <div style="display:flex; justify-content: space-around; align-items: flex-start;">
-            <div>
-                <label>Waveform</label>
-                <div class="wave-grid">
-                    <button class="toggle-btn wave-select active-mode" data-wave="triangle">TRIANGLE</button>
-                    <button class="toggle-btn wave-select" data-wave="sine">SINE</button>
-                    <button class="toggle-btn wave-select" data-wave="square">SQUARE</button>
-                    <button class="toggle-btn wave-select" data-wave="sawtooth">SAWTOOTH</button>
-                </div>
+    <div class="panel">
+        <input type="file" id="fileInput" accept=".mid,.midi" style="margin-bottom:15px; width:100%;">
+        
+        <div class="group">
+            <div class="label-row"><span>TIME (sec)</span><input type="number" id="timeInput" class="num-in" value="0"></div>
+            <div class="label-row"><span id="timeDisplay">0:00 / 0:00</span></div>
+            <input type="range" id="progressRange" min="0" max="100" value="0" step="0.1">
+        </div>
+
+        <button id="playBtn" class="play-btn" style="width:100%; margin-bottom:8px;" disabled>PLAY</button>
+        <div class="btn-row" style="margin-bottom:15px;">
+            <button id="pauseBtn">PAUSE</button>
+            <button id="resetBtn">RESET</button>
+        </div>
+
+        <div class="group" style="border-left: 4px solid var(--bg-play-color);">
+            <button id="bgPlayBtn">BG PLAY: OFF</button>
+        </div>
+
+        <div class="group">
+            <div class="label-row"><span>VOLUME</span><input type="number" id="volNum" class="num-in" value="0.7" step="0.05"></div>
+            <input type="range" id="volRange" min="0" max="1" step="0.01" value="0.7">
+        </div>
+
+        <div class="group">
+            <div class="label-row"><span>TEMPO (x)</span><input type="number" id="tempoNum" class="num-in" value="1.00" step="0.05"></div>
+            <input type="range" id="tempoRange" min="0.2" max="3.0" step="0.01" value="1.00">
+            
+            <div class="label-row" style="margin-top:10px;"><span>PITCH (Semi)</span><input type="number" id="pitchNum" class="num-in" value="0" step="1"></div>
+            <input type="range" id="pitchRange" min="-12" max="12" step="1" value="0">
+        </div>
+
+        <select id="waveSelect" class="group" style="width:100%; color: white;">
+            <option value="triangle">Triangle</option>
+            <option value="sine">Sine</option>
+            <option value="square">Square</option>
+            <option value="sawtooth">Sawtooth</option>
+        </select>
+        <div class="btn-row">
+            <button id="loopBtn">LOOP: OFF</button>
+            <button id="modeBtn">STEREO</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2 style="font-size: 0.9rem; margin-top:0; border-bottom:1px solid #333; padding-bottom:5px;">CHANNEL MIXER</h2>
+        <div id="mixerGrid" class="mixer-grid"></div>
+
+        <h2 style="font-size: 0.9rem; color: var(--eq-color); border-bottom:1px solid #443322; padding-bottom:5px;">MASTER EQUALIZER & ANALYZER</h2>
+        <canvas id="viz"></canvas>
+        
+        <div class="eq-panel">
+            <div class="group" style="margin-bottom:0">
+                <div class="label-row" style="color:var(--eq-color)"><span>BASS</span></div>
+                <input type="range" id="eqBassRange" class="eq-range" min="-20" max="20" value="0">
+                <input type="number" id="eqBassNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
             </div>
-            <div>
-                <label>Audio Mode</label>
-                <div class="audio-settings-grid">
-                    <div class="mono-stereo-wrap">
-                        <button id="monoBtn" class="toggle-btn">MONO</button>
-                        <button id="stereoBtn" class="toggle-btn active-mode">STEREO</button>
-                    </div>
-                    <button id="loopBtn" class="toggle-btn loop-btn-wide">LOOP: OFF</button>
-                </div>
+            <div class="group" style="margin-bottom:0">
+                <div class="label-row" style="color:var(--eq-color)"><span>MID</span></div>
+                <input type="range" id="eqMidRange" class="eq-range" min="-20" max="20" value="0">
+                <input type="number" id="eqMidNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
+            </div>
+            <div class="group" style="margin-bottom:0">
+                <div class="label-row" style="color:var(--eq-color)"><span>TREBLE</span></div>
+                <input type="range" id="eqTrebleRange" class="eq-range" min="-20" max="20" value="0">
+                <input type="number" id="eqTrebleNum" class="num-in eq-in" value="0" style="width:100%; margin-top:5px;">
             </div>
         </div>
+        <div id="status" style="margin-top:15px; font-size:0.75rem; color:#666;">Waiting for MIDI...</div>
     </div>
-
-    <div class="control-group">
-        <label>Tempo (Speed Multiplier)</label>
-        <div class="input-container">
-            <button class="adjust-btn" onclick="adj('tempoInput', -0.01, updateTempo)">-</button>
-            <input type="number" id="tempoInput" value="1.00" step="0.01" min="0.1" max="5.0">
-            <span class="unit">x</span>
-            <button class="adjust-btn" onclick="adj('tempoInput', 0.01, updateTempo)">+</button>
-        </div>
-        <input type="range" id="tempoRange" min="0.1" max="3.0" step="0.01" value="1.00">
-    </div>
-
-    <div class="control-group">
-        <label>Volume</label>
-        <div class="input-container">
-            <button class="adjust-btn" onclick="adj('volInput', -1, updateVol)">-</button>
-            <input type="number" id="volInput" value="50" min="0" max="100">
-            <span class="unit">%</span>
-            <button class="adjust-btn" onclick="adj('volInput', 1, updateVol)">+</button>
-        </div>
-        <input type="range" id="volRange" min="0" max="100" value="50">
-    </div>
-
-    <div class="control-group">
-        <label>Pitch Shift</label>
-        <div class="input-container">
-            <button class="adjust-btn" onclick="adj('pitchInput', -1, updatePitch)">-</button>
-            <input type="number" id="pitchInput" value="0" min="-24" max="24">
-            <span class="unit">st</span>
-            <button class="adjust-btn" onclick="adj('pitchInput', 1, updatePitch)">+</button>
-        </div>
-        <input type="range" id="pitchRange" min="-24" max="24" step="1" value="0">
-    </div>
-
-    <div id="status">Please load a MIDI file</div>
 </div>
 
 <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const masterGain = audioCtx.createGain();
-    masterGain.connect(audioCtx.destination);
-    let musicData = [], isPlaying = false, isPaused = false, isLooping = false;
-    let currentIndex = 0, startTime = 0, pausedTime = 0, timerId = null, isStereo = true, currentWave = 'triangle';
-
-    function adj(id, delta, cb) {
-        const el = document.getElementById(id);
-        el.value = (parseFloat(el.value) + delta).toFixed(id.includes('tempo') ? 2 : 0);
-        cb();
-    }
-    function updateTempo() { document.getElementById('tempoRange').value = document.getElementById('tempoInput').value; }
-    function updateVol() { 
-        const v = document.getElementById('volInput').value;
-        document.getElementById('volRange').value = v;
-        masterGain.gain.setTargetAtTime(v / 100, audioCtx.currentTime, 0.02);
-    }
-    function updatePitch() { document.getElementById('pitchRange').value = document.getElementById('pitchInput').value; }
-
-    document.getElementById('tempoRange').oninput = function() { document.getElementById('tempoInput').value = parseFloat(this.value).toFixed(2); };
-    document.getElementById('volRange').oninput = function() { document.getElementById('volInput').value = this.value; updateVol(); };
-    document.getElementById('pitchRange').oninput = function() { document.getElementById('pitchInput').value = this.value; };
-
-    document.querySelectorAll('.wave-select').forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll('.wave-select').forEach(b => b.classList.remove('active-mode'));
-            btn.classList.add('active-mode');
-            currentWave = btn.getAttribute('data-wave');
-        };
-    });
-
-    // Audio Mode Logic
-    const monoBtn = document.getElementById('monoBtn');
-    const stereoBtn = document.getElementById('stereoBtn');
     
-    monoBtn.onclick = () => {
-        isStereo = false;
-        monoBtn.classList.add('active-mode');
-        stereoBtn.classList.remove('active-mode');
-    };
-    stereoBtn.onclick = () => {
-        isStereo = true;
-        stereoBtn.classList.add('active-mode');
-        monoBtn.classList.remove('active-mode');
-    };
+    // --- Audio Nodes Chain ---
+    const bassFilter = audioCtx.createBiquadFilter(); bassFilter.type = "lowshelf"; bassFilter.frequency.value = 200;
+    const midFilter = audioCtx.createBiquadFilter(); midFilter.type = "peaking"; midFilter.frequency.value = 1000; midFilter.Q.value = 1;
+    const trebleFilter = audioCtx.createBiquadFilter(); trebleFilter.type = "highshelf"; trebleFilter.frequency.value = 3000;
+    
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    
+    const masterGain = audioCtx.createGain();
 
-    document.getElementById('loopBtn').onclick = function() {
-        isLooping = !isLooping;
-        this.innerText = isLooping ? "LOOP: ON" : "LOOP: OFF";
-        this.classList.toggle('active-mode', isLooping);
-    };
+    // Connection: Filter Chain -> Analyser -> MasterGain -> Destination
+    bassFilter.connect(midFilter);
+    midFilter.connect(trebleFilter);
+    trebleFilter.connect(analyser);
+    analyser.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+
+    // --- Worker Setup (Background Play) ---
+    const workerBlob = new Blob([`
+        let timer = null;
+        self.onmessage = function(e) {
+            if (e.data === 'start') { if(!timer) timer = setInterval(() => self.postMessage('tick'), 25); }
+            else if (e.data === 'stop') { clearInterval(timer); timer = null; }
+        };
+    `], { type: 'text/javascript' });
+    const worker = new Worker(URL.createObjectURL(workerBlob));
+
+    // UI Sync Helper
+    function sync(sliderId, numId, nodeParam) {
+        const s = document.getElementById(sliderId), n = document.getElementById(numId);
+        const update = (v) => { 
+            v = parseFloat(v);
+            n.value = v; s.value = v; 
+            if(nodeParam instanceof AudioParam) nodeParam.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+        };
+        s.oninput = () => update(s.value); n.oninput = () => update(n.value);
+    }
+
+    sync('volRange', 'volNum', masterGain.gain);
+    sync('tempoRange', 'tempoNum', null);
+    sync('pitchRange', 'pitchNum', null);
+    sync('eqBassRange', 'eqBassNum', bassFilter.gain);
+    sync('eqMidRange', 'eqMidNum', midFilter.gain);
+    sync('eqTrebleRange', 'eqTrebleNum', trebleFilter.gain);
+
+    let musicData = [], isPlaying = false, isPaused = false, isLooping = false, isStereo = true, isBgPlay = false;
+    let startTime = 0, pausedTime = 0, currentIndex = 0, totalDuration = 0, animId = null;
+    const chSettings = Array.from({length: 16}, () => ({ vol: 0.5 }));
+
+    // Mixer UI Init
+    const mixerGrid = document.getElementById('mixerGrid');
+    for(let i=0; i<16; i++) {
+        const div = document.createElement('div'); div.className = 'ch';
+        div.innerHTML = `<div class="ind" id="ind-${i}"></div>
+            <input type="range" class="v-slider" id="vs-${i}" min="0" max="1" step="0.01" value="0.5">
+            <div style="font-size:0.5rem">CH${i+1}</div>`;
+        mixerGrid.appendChild(div);
+        div.querySelector(`#vs-${i}`).oninput = (e) => { chSettings[i].vol = parseFloat(e.target.value); };
+    }
+
+    const formatTime = (s) => `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+    
+    function seekTo(target) {
+        pausedTime = Math.max(0, Math.min(target, totalDuration));
+        startTime = audioCtx.currentTime;
+        currentIndex = musicData.findIndex(n => n.t >= pausedTime);
+        if(currentIndex === -1) currentIndex = musicData.length;
+        document.getElementById('progressRange').value = pausedTime;
+    }
 
     document.getElementById('fileInput').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (ev) => {
             const midi = MidiParser.parse(new Uint8Array(ev.target.result));
-            const tpb = midi.timeDivision;
             musicData = [];
             midi.track.forEach(track => {
-                let ticks = 0;
-                track.event.forEach(event => {
-                    ticks += event.deltaTime;
-                    if (event.type === 9 && event.data[1] > 0) {
-                        musicData.push({ n: event.data[0], t: (ticks / tpb) * 0.5 });
+                let ticks = 0, active = {};
+                track.event.forEach(ev => {
+                    ticks += ev.deltaTime;
+                    let n = ev.data ? ev.data[0] : null;
+                    if(ev.type === 9 && ev.data[1] > 0) active[n] = {t: ticks, v: ev.data[1]};
+                    else if(active[n] && (ev.type === 8 || (ev.type === 9 && ev.data[1] === 0))) {
+                        musicData.push({
+                            n:n, 
+                            t:(active[n].t/midi.timeDivision)*0.5, 
+                            d:((ticks-active[n].t)/midi.timeDivision)*0.5, 
+                            ch:ev.channel, 
+                            vel:active[n].v/127
+                        });
+                        delete active[n];
                     }
                 });
             });
-            musicData.sort((a, b) => a.t - b.t);
+            musicData.sort((a,b) => a.t - b.t);
+            totalDuration = musicData.length ? Math.max(...musicData.map(d=>d.t+d.d)) : 0;
+            document.getElementById('progressRange').max = totalDuration;
             document.getElementById('playBtn').disabled = false;
-            document.getElementById('status').innerText = `READY: ${musicData.length} NOTES LOADED`;
+            document.getElementById('status').innerText = `Ready: ${musicData.length} notes.`;
+            seekTo(0);
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     };
 
-    function playTone(note, time) {
-        const pitch = parseInt(document.getElementById('pitchInput').value);
-        const freq = 440 * Math.pow(2, (note + pitch - 69) / 12);
+    function playTone(note, time, dur, ch, vel) {
+        const speed = parseFloat(document.getElementById('tempoNum').value);
+        const pitchShift = parseInt(document.getElementById('pitchNum').value);
         const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = currentWave;
-        osc.frequency.setValueAtTime(freq, time);
-        let baseVol = (currentWave === 'square') ? 0.12 : (currentWave === 'sawtooth') ? 0.1 : 0.2;
-        gain.gain.setValueAtTime(baseVol, time);
-        gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
-        if (isStereo) {
-            const panner = audioCtx.createStereoPanner();
-            panner.pan.setValueAtTime(Math.random() * 1.4 - 0.7, time);
-            osc.connect(gain).connect(panner).connect(masterGain);
-        } else { osc.connect(gain).connect(masterGain); }
-        osc.start(time); osc.stop(time + 0.3);
+        const g = audioCtx.createGain();
+        const p = audioCtx.createStereoPanner();
+        
+        osc.type = document.getElementById('waveSelect').value;
+        osc.frequency.setValueAtTime(440 * Math.pow(2, (note + pitchShift - 69)/12), time);
+        p.pan.setTargetAtTime(isStereo ? (ch % 2 === 0 ? -0.5 : 0.5) : 0, time, 0.01);
+        
+        const realDur = dur / speed;
+        const v = chSettings[ch].vol * vel * 0.15; // Adjusted gain to prevent clipping
+        
+        // ADSR Envelope (Anti-Click)
+        g.gain.setTargetAtTime(0, time, 0.001);
+        g.gain.linearRampToValueAtTime(v, time + 0.01);
+        g.gain.linearRampToValueAtTime(0, time + realDur);
+
+        osc.connect(g).connect(p).connect(bassFilter);
+        osc.start(time); osc.stop(time + realDur);
+        
+        // Visual Feedback (Mixer Indicators)
+        const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+        setTimeout(() => {
+            const ind = document.getElementById(`ind-${ch}`);
+            if(ind && isPlaying && !isPaused) { 
+                ind.classList.add('active'); 
+                setTimeout(()=>ind.classList.remove('active'), 80); 
+            }
+        }, delay);
     }
 
-    function startScheduler() {
-        const lookAhead = 0.4, interval = 50;
-        timerId = setInterval(() => {
-            if (!isPlaying || isPaused) return;
-            const speed = parseFloat(document.getElementById('tempoInput').value);
-            const now = audioCtx.currentTime;
-            const elapsed = (now - startTime) * speed + pausedTime;
-            while (currentIndex < musicData.length && musicData[currentIndex].t < elapsed + (lookAhead * speed)) {
-                const noteTime = (musicData[currentIndex].t - pausedTime) / speed + startTime;
-                if (noteTime >= now) playTone(musicData[currentIndex].n, noteTime);
-                currentIndex++;
-            }
-            if (currentIndex >= musicData.length) {
-                if (isLooping) { currentIndex = 0; startTime = audioCtx.currentTime; pausedTime = 0; }
-                else { isPlaying = false; clearInterval(timerId); document.getElementById('status').innerText = "PLAYBACK FINISHED"; }
-            }
-        }, interval);
+    function schedule() {
+        if(!isPlaying || isPaused) return;
+        const speed = parseFloat(document.getElementById('tempoNum').value);
+        const now = (audioCtx.currentTime - startTime) * speed + pausedTime;
+        
+        document.getElementById('progressRange').value = now;
+        document.getElementById('timeDisplay').innerText = `${formatTime(now)} / ${formatTime(totalDuration)}`;
+
+        while(currentIndex < musicData.length && musicData[currentIndex].t < now + 0.15) {
+            const d = musicData[currentIndex];
+            playTone(d.n, (d.t - pausedTime)/speed + startTime, d.d, d.ch, d.vel);
+            currentIndex++;
+        }
+        
+        if(now >= totalDuration) { 
+            if(isLooping) seekTo(0); 
+            else { isPlaying = false; worker.postMessage('stop'); } 
+        }
+        if (!isBgPlay) animId = requestAnimationFrame(schedule);
     }
+
+    // --- Visualizer Engine ---
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+    function draw() {
+        requestAnimationFrame(draw);
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.fillStyle = '#0a0a12';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+        for(let i = 0; i < bufferLength; i++) {
+            const barHeight = dataArray[i] / 2;
+            ctx.fillStyle = `rgb(0, ${dataArray[i]+100}, 255)`;
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+    }
+    draw();
+
+    worker.onmessage = () => { if(isBgPlay) schedule(); };
 
     document.getElementById('playBtn').onclick = () => {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        if (!isPlaying) { isPlaying = true; isPaused = false; currentIndex = 0; startTime = audioCtx.currentTime; pausedTime = 0; startScheduler(); }
-        else if (isPaused) { isPaused = false; startTime = audioCtx.currentTime; }
-        document.getElementById('status').innerText = "STATUS: PLAYING...";
+        audioCtx.resume(); isPlaying = true; isPaused = false; 
+        startTime = audioCtx.currentTime;
+        if(isBgPlay) worker.postMessage('start');
+        schedule();
     };
 
-    document.getElementById('pauseBtn').onclick = () => {
-        if (isPlaying && !isPaused) {
-            isPaused = true;
-            pausedTime += (audioCtx.currentTime - startTime) * parseFloat(document.getElementById('tempoInput').value);
-            document.getElementById('status').innerText = "STATUS: PAUSED";
+    document.getElementById('bgPlayBtn').onclick = function() {
+        isBgPlay = !isBgPlay;
+        this.classList.toggle('active');
+        this.innerText = `BG PLAY: ${isBgPlay ? 'ON' : 'OFF'}`;
+        if(isPlaying && !isPaused) {
+            if(isBgPlay) { cancelAnimationFrame(animId); worker.postMessage('start'); }
+            else { worker.postMessage('stop'); schedule(); }
         }
     };
+
+    document.getElementById('pauseBtn').onclick = function() { 
+        if(!isPlaying) return;
+        isPaused = !isPaused;
+        if(isPaused) { 
+            pausedTime += (audioCtx.currentTime - startTime)*parseFloat(document.getElementById('tempoNum').value); 
+            cancelAnimationFrame(animId); worker.postMessage('stop'); this.innerText="RESUME"; 
+        } else { 
+            startTime = audioCtx.currentTime; this.innerText="PAUSE"; 
+            if(isBgPlay) worker.postMessage('start'); else schedule();
+        }
+    };
+
+    document.getElementById('resetBtn').onclick = () => { seekTo(0); if(!isPlaying) document.getElementById('playBtn').click(); };
+    document.getElementById('progressRange').oninput = (e) => seekTo(parseFloat(e.target.value));
+    document.getElementById('loopBtn').onclick = function() { isLooping = !isLooping; this.classList.toggle('active'); this.innerText = `LOOP: ${isLooping?'ON':'OFF'}`; };
+    document.getElementById('modeBtn').onclick = function() { isStereo = !isStereo; this.innerText = isStereo ? "STEREO" : "MONO"; };
+
 </script>
 </body>
 </html>
