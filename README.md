@@ -4,6 +4,7 @@
 This is a MIDI player that converts your MIDI (.mid) files to triangle wave sounds and allows you to play them in a web browser.
 
 ## [How to Use]
+0. **Visit the Site**: Please Visit "https://saki-squid.github.io/TriangleWaveMIDIPlayer/."
 1. **Select a File**: Click "Choose File."
 2. **Load MIDI**: Select your MIDI (.mid) file.
 3. **Play**: Press "PLAY/RESUME" to start playback.
